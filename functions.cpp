@@ -2,8 +2,13 @@
 #include "structures.cpp"
 using namespace std;
 
+#define MAX_DEPTH 1000
+#define INFINITY 1000000000
+
 // index 0 is bottom left corner
 // index 63 is top right corner
+
+int visited_nodes;
 
 GameState parse_initial_board(vector<char> board);
 
@@ -123,37 +128,19 @@ GameState make_move(const GameState& state, Move& move){
     return new_state;
 }
 
-float evaluate(const GameState& state){
-    float w1 = 0.33;
-    float w2 = 0.33;
-    float w3 = 0.33;
-
-    float f1 = material_eval(state);
-    float f2 = progression_eval(state);
-    float f3 = safety_eval(state);
-
-    float final_result = (w1 * f1) + (w2 * f2) + (w3 * f3);
-
-    // final_result > 0 white is winning
-    // final_result = 0 draw
-    // final_result < 0 black is winning
-
-    return final_result; 
-}
-
-float material_eval(const GameState& state){
+int material_eval(const GameState& state){
     return __builtin_popcountll(state.pieces[0]) - __builtin_popcountll(state.pieces[1]);
 }
 
-float progression_eval(const GameState& state){
-    uint64_t rows[] = {0x00000000000000FFULL, 0x000000000000FF00ULL, 0x0000000000FF0000ULL, 0x00000000FF000000ULL,
+int progression_eval(const GameState& state){
+    static constexpr uint64_t rows[] = {0x00000000000000FFULL, 0x000000000000FF00ULL, 0x0000000000FF0000ULL, 0x00000000FF000000ULL,
                        0x000000FF00000000ULL, 0x0000FF0000000000ULL, 0x00FF000000000000ULL, 0xFF00000000000000ULL};
 
-    float rows_w[] = {0, 0, 1, 2.0,
-                      5.0, 10.0, 20.0, 100.0};
+    static constexpr int rows_w[] = {0, 0, 1, 2,
+                      5, 10, 20, 10000};
 
-    float white_score = 0.0;
-    float black_score = 0.0;
+    int white_score = 0;
+    int black_score = 0;
 
     for(int i=0; i<8; i++){
         // WHITE
@@ -168,7 +155,7 @@ float progression_eval(const GameState& state){
     return white_score - black_score;
 }
 
-float safety_eval(const GameState& state){
+int safety_eval(const GameState& state){
     uint64_t not_l_edge = 0xFEFEFEFEFEFEFEFEULL;
     uint64_t not_r_edge = 0x7F7F7F7F7F7F7F7FULL;
 
@@ -199,3 +186,62 @@ float safety_eval(const GameState& state){
 
     return white_score - black_score;
 }
+
+int evaluate(const GameState& state, const int& ai_player){
+    int w1 = 10;
+    int w2 = 60;
+    int w3 = 30;
+
+    int f1 = material_eval(state);
+    int f2 = progression_eval(state);
+    int f3 = safety_eval(state);
+
+    int final_result = (w1 * f1) + (w2 * f2) + (w3 * f3);
+
+    // final_result > 0 white is winning
+    // final_result = 0 draw
+    // final_result < 0 black is winning
+
+    if(ai_player == 0){
+        return final_result;
+    } else {
+        return -final_result;
+    }
+}
+
+int minimax(const GameState& state, int depth, int ai_player, bool is_maximizing){
+    visited_nodes ++;
+
+    if(is_game_over(state)){
+        if(is_maximizing) return -INFINITY;
+        else return INFINITY;
+    }
+
+    if(depth == MAX_DEPTH) return evaluate(state, ai_player);
+
+    vector<Move> possible_move = generate_possible_moves(state);
+    int temp = 0;
+    if(is_maximizing){
+        int max_score = -INFINITY;
+        for(int i=0; i<possible_move.size(); i++){
+            temp = minimax(make_move(state, possible_move[i]), depth + 1, ai_player, !is_maximizing);
+            max_score = max(max_score, temp);
+        }
+        return max_score;
+
+    } else {
+        int min_score = INFINITY;
+        for(int i=0; i<possible_move.size(); i++){
+            temp = minimax(make_move(state, possible_move[i]), depth + 1, ai_player, !is_maximizing);
+            min_score = min(min_score, temp);
+        }
+        return min_score;
+    }
+}
+
+// ^^^ CHECKED CODE ABOVE THIS ^^^
+
+int alpha_beta(const GameState& state, int depth, bool is_maximizing, int alpha, int beta){
+
+}
+
