@@ -8,7 +8,9 @@ struct Move {
 
 struct GameState {
     uint64_t pieces[2];
-    bool turn; // 1 - white, 0 - black
+    
+    // 1 - white, 0 - black
+    bool turn; 
 };
 
 

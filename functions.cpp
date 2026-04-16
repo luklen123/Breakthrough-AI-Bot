@@ -2,6 +2,9 @@
 #include "structures.cpp"
 using namespace std;
 
+// index 0 is bottom left corner
+// index 63 is top right corner
+
 GameState parse_initial_board(vector<char> board);
 
 void print_board(const GameState& state, Move last_move){
@@ -130,48 +133,69 @@ float evaluate(const GameState& state){
     float f3 = safety_eval(state);
 
     float final_result = (w1 * f1) + (w2 * f2) + (w3 * f3);
-    
-    return final_result;
+
+    // final_result > 0 white is winning
+    // final_result = 0 draw
+    // final_result < 0 black is winning
+
+    return final_result; 
 }
 
 float material_eval(const GameState& state){
-    int player = state.turn;
-    int enemy = (player + 1) % 2;
-
-    return __builtin_popcount(state.pieces[player]) - __builtin_popcount(state.pieces[enemy]);
+    return __builtin_popcountll(state.pieces[0]) - __builtin_popcountll(state.pieces[1]);
 }
 
 float progression_eval(const GameState& state){
     uint64_t rows[] = {0x00000000000000FFULL, 0x000000000000FF00ULL, 0x0000000000FF0000ULL, 0x00000000FF000000ULL,
                        0x000000FF00000000ULL, 0x0000FF0000000000ULL, 0x00FF000000000000ULL, 0xFF00000000000000ULL};
 
-    float rows_w[] = {0, 1, 1.5, 2.0,
+    float rows_w[] = {0, 0, 1, 2.0,
                       5.0, 10.0, 20.0, 100.0};
 
-
-    int player = state.turn;
-    int enemy = (player + 1) % 2;
-
-    float result = 0.0;
+    float white_score = 0.0;
+    float black_score = 0.0;
 
     for(int i=0; i<8; i++){
-        // player
-        uint64_t temp = state.pieces[player] & rows[i];
-        result += __builtin_popcount(temp) * rows_w[i];
+        // WHITE
+        uint64_t temp = state.pieces[0] & rows[i];
+        white_score += __builtin_popcountll(temp) * rows_w[i];
 
-        // enemy
-        temp = state.pieces[enemy] & rows[i];
-        result -= __builtin_popcount(temp) * rows_w[i];
+        // BLACK
+        temp = state.pieces[1] & rows[i];
+        black_score += __builtin_popcountll(temp) * rows_w[7-i];
     }
 
-    return result;
+    return white_score - black_score;
 }
 
 float safety_eval(const GameState& state){
+    uint64_t not_l_edge = 0xFEFEFEFEFEFEFEFEULL;
+    uint64_t not_r_edge = 0x7F7F7F7F7F7F7F7FULL;
 
+    int white_score = 0;
+    int black_score = 0;
+
+    // WHITE 
+    // diagonal_l
+    uint64_t shifted = (state.pieces[0] & not_l_edge) << 7;
+    shifted &= state.pieces[0];
+    white_score += __builtin_popcountll(shifted);
+
+    // diagonal_r
+    shifted = (state.pieces[0] & not_r_edge) << 9;
+    shifted &= state.pieces[0];
+    white_score += __builtin_popcountll(shifted);
+
+    // BLACK 
+    // diagonal_l
+    shifted = (state.pieces[1] & not_l_edge) >> 9;
+    shifted &= state.pieces[1];
+    black_score += __builtin_popcountll(shifted);
+
+    // diagonal_r
+    shifted = (state.pieces[1] & not_r_edge) >> 7;
+    shifted &= state.pieces[1];
+    black_score += __builtin_popcountll(shifted);
+
+    return white_score - black_score;
 }
-
-
- 
-
-
