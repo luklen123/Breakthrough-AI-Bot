@@ -214,7 +214,7 @@ int minimax(const GameState& state, int depth, int ai_player, bool is_maximizing
 
     if(is_game_over(state)){
         if(is_maximizing) return -INFINITY;
-        else return INFINITY;
+        return INFINITY;
     }
 
     if(depth == MAX_DEPTH) return evaluate(state, ai_player);
@@ -223,16 +223,16 @@ int minimax(const GameState& state, int depth, int ai_player, bool is_maximizing
     int temp = 0;
     if(is_maximizing){
         int max_score = -INFINITY;
-        for(int i=0; i<possible_move.size(); i++){
-            temp = minimax(make_move(state, possible_move[i]), depth + 1, ai_player, !is_maximizing);
+        for(auto& move : possible_move){
+            temp = minimax(make_move(state, move), depth + 1, ai_player, !is_maximizing);
             max_score = max(max_score, temp);
         }
         return max_score;
 
     } else {
         int min_score = INFINITY;
-        for(int i=0; i<possible_move.size(); i++){
-            temp = minimax(make_move(state, possible_move[i]), depth + 1, ai_player, !is_maximizing);
+        for(auto& move : possible_move){
+            temp = minimax(make_move(state, move), depth + 1, ai_player, !is_maximizing);
             min_score = min(min_score, temp);
         }
         return min_score;
@@ -241,7 +241,37 @@ int minimax(const GameState& state, int depth, int ai_player, bool is_maximizing
 
 // ^^^ CHECKED CODE ABOVE THIS ^^^
 
-int alpha_beta(const GameState& state, int depth, bool is_maximizing, int alpha, int beta){
+int alpha_beta_pruning(const GameState& state, int depth, int ai_player, bool is_maximizing, int alpha, int beta){
+    visited_nodes ++;
 
+    if(is_game_over(state)){
+        if(is_maximizing) return -INFINITY;
+        return INFINITY;
+    }
+
+    if(depth == MAX_DEPTH) return evaluate(state, ai_player);
+
+    vector<Move> possible_moves = generate_possible_moves(state);
+
+    if(is_maximizing){
+        int max_score = -INFINITY;
+        for(auto& move : possible_moves){
+            int temp = alpha_beta_pruning(make_move(state, move), depth + 1, ai_player, !is_maximizing, alpha, beta);
+            max_score = max(max_score, temp);
+            alpha = max(alpha, temp);
+            if(beta <= alpha) break;
+        }  
+        return max_score; 
+
+    } else {
+        int min_score = INFINITY;
+        for(auto& move : possible_moves){
+            int temp = alpha_beta_pruning(make_move(state, move), depth + 1, ai_player, !is_maximizing, alpha, beta);
+            min_score = min(min_score, temp);
+            beta = min(beta, temp);
+            if(beta <= alpha) break;
+        }  
+        return min_score; 
+    }
 }
 
