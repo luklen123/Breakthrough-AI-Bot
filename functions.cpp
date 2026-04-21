@@ -10,10 +10,6 @@ using namespace std;
 
 int visited_nodes;
 
-// GameState parse_board(vector<char> board){
-    
-// }
-
 void print_board(const GameState& state, Move last_move){
     if(state.turn == 0){
         cout << "  a b c d e f g h\n";
@@ -40,7 +36,7 @@ void print_board(const GameState& state, Move last_move){
         cout << "  h g f e d c b a\n";
         for(int i=0; i<=56; i+=8){
             cout << ((i / 8) + 1) << " ";
-            for(int j=0; j<8; j++){
+            for(int j=7; j>=0; j--){
                 if((i + j) == last_move.from){
                     cout << "o";
                 } else if(state.pieces[0] & (1ULL << (i+j))){
@@ -320,8 +316,8 @@ Move get_best_move(const GameState& state, int ai_player){
 
     for(int i=0; i<possible_moves.size(); i++){
         GameState next_state = make_move(state, possible_moves[i]);
-        //int score = alpha_beta_pruning(next_state, 1, ai_player, false, best_score, INFINITY_VAL);
-        int score = minimax(next_state, 1, ai_player, false);
+        int score = alpha_beta_pruning(next_state, 1, ai_player, false, best_score, INFINITY_VAL);
+        //int score = minimax(next_state, 1, ai_player, false);
         if(best_score < score){
             best_score = score;
             best_score_idx = i;
@@ -352,6 +348,12 @@ GameState init_board(){
 int decode(string idx){
     if(idx.size() != 2 || !('a' <= idx[0] && idx[0] <= 'h') || !('1' <= idx[1] && idx[1] <= '8')) return 255;
     return ((idx[0] - 'a') + ((idx[1] - '1') * 8));
+}
+
+string encode(int pos){
+    char n = ((pos / 8) + '1');
+    char l = ((pos % 8) + 'a');
+    return string(1, l) + string(1, n);
 }
 
 bool validate_move(const GameState& state, const Move& move){
@@ -417,26 +419,3 @@ void game(int ai_player){
     cout << "\n" << (state.turn == 0 ? "BLACKS wins!!!" : "WHITES wins!!!") << "\n";
 }
 
-int main(){
-    cout << "-----------------------------------\n";
-    cout << "Hi, welcome in Breakthrough game!\n";
-    cout << "-----------------------------------\n\n";
-    cout << "Choose Your side!\nEnter W (for whites), B (for blacks), N (for none, game between bots): ";
-
-    char player_side;
-    cin >> player_side;
-
-    switch (player_side){
-        case 'W':
-            game(1);
-            break;
-        case 'B':
-            game(0);
-            break;
-        case 'N':
-            game(2);
-            break;
-        default:
-            cout << "Entered invalid value :(";
-    }
-}
