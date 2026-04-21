@@ -2,33 +2,60 @@
 #include "structures.cpp"
 using namespace std;
 
-#define MAX_DEPTH 1000
-#define INFINITY 1000000000
+#define MAX_DEPTH 7
+#define INFINITY_VAL 1000000000
 
 // index 0 is bottom left corner
 // index 63 is top right corner
 
 int visited_nodes;
 
-GameState parse_initial_board(vector<char> board);
+// GameState parse_board(vector<char> board){
+    
+// }
 
 void print_board(const GameState& state, Move last_move){
-    for(int i=56; i>=0; i-=8){
-        for(int j=0; j<8; j++){
+    if(state.turn == 0){
+        cout << "  a b c d e f g h\n";
+        for(int i=56; i>=0; i-=8){
+            cout << ((i / 8) + 1) << " ";
+            for(int j=0; j<8; j++){
 
-            if((i + j) == last_move.from){
-                cout << "o";
-            } else if(state.pieces[0] & (1ULL << (i+j))){
-                cout << "W";
-            } else if(state.pieces[1] & (1ULL << (i+j))){
-                cout << "B";
-            } else {
-                cout << "_";
+                if((i + j) == last_move.from){
+                    cout << "o";
+                } else if(state.pieces[0] & (1ULL << (i+j))){
+                    cout << "W";
+                } else if(state.pieces[1] & (1ULL << (i+j))){
+                    cout << "B";
+                } else {
+                    cout << "_";
+                }
+
+                cout << " ";
             }
-
-            cout << " ";
+            cout << ((i / 8) + 1) << "\n";
         }
-        cout << "\n";
+        cout << "  a b c d e f g h\n";
+    } else {
+        cout << "  h g f e d c b a\n";
+        for(int i=0; i<=56; i+=8){
+            cout << ((i / 8) + 1) << " ";
+            for(int j=0; j<8; j++){
+                if((i + j) == last_move.from){
+                    cout << "o";
+                } else if(state.pieces[0] & (1ULL << (i+j))){
+                    cout << "W";
+                } else if(state.pieces[1] & (1ULL << (i+j))){
+                    cout << "B";
+                } else {
+                    cout << "_";
+                }
+
+                cout << " ";
+            }
+            cout << ((i / 8) + 1) << "\n";
+        }
+        cout << "  h g f e d c b a\n";
     }
 }
 
@@ -37,8 +64,8 @@ bool is_game_over(const GameState& state){
     uint64_t row_1 = 0x00000000000000FFULL;
     uint64_t row_8 = 0xFF00000000000000ULL;
 
-    if(state.pieces[0] & row_1) return true;
-    if(state.pieces[1] & row_8) return true;
+    if(state.pieces[0] & row_8) return true;
+    if(state.pieces[1] & row_1) return true;
 
     if(state.pieces[0] == 0 || state.pieces[1] == 0) return true;
 
@@ -192,6 +219,13 @@ int evaluate(const GameState& state, const int& ai_player){
     int w2 = 60;
     int w3 = 30;
 
+    int total_pieces = __builtin_popcountll(state.pieces[0]) + __builtin_popcountll(state.pieces[1]);
+    if(total_pieces <= 12){
+        w1 = 5;
+        w2 = 85;
+        w3 = 10;
+    }
+
     int f1 = material_eval(state);
     int f2 = progression_eval(state);
     int f3 = safety_eval(state);
@@ -213,8 +247,8 @@ int minimax(const GameState& state, int depth, int ai_player, bool is_maximizing
     visited_nodes ++;
 
     if(is_game_over(state)){
-        if(is_maximizing) return -INFINITY;
-        return INFINITY;
+        if(is_maximizing) return -INFINITY_VAL;
+        return INFINITY_VAL;
     }
 
     if(depth == MAX_DEPTH) return evaluate(state, ai_player);
@@ -222,7 +256,7 @@ int minimax(const GameState& state, int depth, int ai_player, bool is_maximizing
     vector<Move> possible_move = generate_possible_moves(state);
     int temp = 0;
     if(is_maximizing){
-        int max_score = -INFINITY;
+        int max_score = -INFINITY_VAL;
         for(auto& move : possible_move){
             temp = minimax(make_move(state, move), depth + 1, ai_player, !is_maximizing);
             max_score = max(max_score, temp);
@@ -230,7 +264,7 @@ int minimax(const GameState& state, int depth, int ai_player, bool is_maximizing
         return max_score;
 
     } else {
-        int min_score = INFINITY;
+        int min_score = INFINITY_VAL;
         for(auto& move : possible_move){
             temp = minimax(make_move(state, move), depth + 1, ai_player, !is_maximizing);
             min_score = min(min_score, temp);
@@ -239,14 +273,12 @@ int minimax(const GameState& state, int depth, int ai_player, bool is_maximizing
     }
 }
 
-// ^^^ CHECKED CODE ABOVE THIS ^^^
-
 int alpha_beta_pruning(const GameState& state, int depth, int ai_player, bool is_maximizing, int alpha, int beta){
     visited_nodes ++;
 
     if(is_game_over(state)){
-        if(is_maximizing) return -INFINITY;
-        return INFINITY;
+        if(is_maximizing) return -INFINITY_VAL;
+        return INFINITY_VAL;
     }
 
     if(depth == MAX_DEPTH) return evaluate(state, ai_player);
@@ -254,7 +286,7 @@ int alpha_beta_pruning(const GameState& state, int depth, int ai_player, bool is
     vector<Move> possible_moves = generate_possible_moves(state);
 
     if(is_maximizing){
-        int max_score = -INFINITY;
+        int max_score = -INFINITY_VAL;
         for(auto& move : possible_moves){
             int temp = alpha_beta_pruning(make_move(state, move), depth + 1, ai_player, !is_maximizing, alpha, beta);
             max_score = max(max_score, temp);
@@ -264,7 +296,7 @@ int alpha_beta_pruning(const GameState& state, int depth, int ai_player, bool is
         return max_score; 
 
     } else {
-        int min_score = INFINITY;
+        int min_score = INFINITY_VAL;
         for(auto& move : possible_moves){
             int temp = alpha_beta_pruning(make_move(state, move), depth + 1, ai_player, !is_maximizing, alpha, beta);
             min_score = min(min_score, temp);
@@ -275,3 +307,136 @@ int alpha_beta_pruning(const GameState& state, int depth, int ai_player, bool is
     }
 }
 
+Move get_best_move(const GameState& state, int ai_player){
+    auto start_time = chrono::high_resolution_clock::now();
+
+    int best_score = -INFINITY_VAL;
+    int best_score_idx = 0;
+    visited_nodes = 0;
+
+    vector<Move> possible_moves = generate_possible_moves(state);
+
+    if(possible_moves.empty()) return Move();
+
+    for(int i=0; i<possible_moves.size(); i++){
+        GameState next_state = make_move(state, possible_moves[i]);
+        //int score = alpha_beta_pruning(next_state, 1, ai_player, false, best_score, INFINITY_VAL);
+        int score = minimax(next_state, 1, ai_player, false);
+        if(best_score < score){
+            best_score = score;
+            best_score_idx = i;
+        }
+    }
+
+    auto end_time = chrono::high_resolution_clock::now();
+    chrono::duration<double, std::milli> duration = end_time - start_time;
+
+    cerr << "--------------------------------------\n";
+    cerr << "AI info:\n";
+    cerr << "Odwiedzone wezly: " << visited_nodes << "\n";
+    cerr << "Czas: " << duration.count() << " ms\n";
+    cerr << "--------------------------------------\n";
+
+    return possible_moves[best_score_idx];
+}
+
+GameState init_board(){
+    GameState state;
+    state.pieces[0] = 0x000000000000FFFFULL;
+    state.pieces[1] = 0xFFFF000000000000ULL;
+    state.turn = 0;
+
+    return state;
+}
+
+int decode(string idx){
+    if(idx.size() != 2 || !('a' <= idx[0] && idx[0] <= 'h') || !('1' <= idx[1] && idx[1] <= '8')) return 255;
+    return ((idx[0] - 'a') + ((idx[1] - '1') * 8));
+}
+
+bool validate_move(const GameState& state, const Move& move){
+    if(move.from == 255 || move.to == 255) return false;
+
+    if((state.pieces[state.turn] & (1ULL << move.from)) == 0) return false;
+
+    vector<Move> possible_moves = generate_possible_moves(state);
+    for(const auto& possible_move : possible_moves){
+        if(possible_move.from == move.from && possible_move.to == move.to) return true;
+    }
+
+    return false;
+}
+
+Move get_player_move(GameState state, Move last_move){
+    Move move;
+    string idx_from;
+    string idx_to;
+
+    cout << "Game state:\n\n";
+    print_board(state, last_move);
+
+    bool valid_move = false;
+    while(!valid_move){
+        cout << "\nPlease provide your move.\n";
+        cout << "From (enter current position of Your piece ex. c2): ";
+        cin >> idx_from;
+        cout << "To (enter desired position ex. h7): ";
+        cin >> idx_to;
+        move.from = decode(idx_from);
+        move.to = decode(idx_to);
+        valid_move = validate_move(state, move);
+        if(!valid_move) cout << "Entered move is invalid!!!\n";
+    }
+
+    return move;
+}
+
+void game(int ai_player){
+    GameState state = init_board();
+    Move last_move;
+    // make last_move invalid for first turn
+    Move selected_move;
+
+    while(!is_game_over(state)){
+        if(state.turn == ai_player || ai_player == 2){
+            int current_ai = (ai_player == 2) ? state.turn : ai_player;
+            selected_move = get_best_move(state, current_ai);
+        } else {
+            selected_move = get_player_move(state, last_move);
+        }
+        state = make_move(state, selected_move);
+        last_move = selected_move;
+        if(ai_player == 2 && state.turn == 1) print_board(state, last_move);
+    }
+
+    cout << "\n==============================\n";
+    cout << "        GAME FINISHED!        \n";
+    cout << "==============================\n\n";
+    print_board(state, last_move);
+
+    cout << "\n" << (state.turn == 0 ? "BLACKS wins!!!" : "WHITES wins!!!") << "\n";
+}
+
+int main(){
+    cout << "-----------------------------------\n";
+    cout << "Hi, welcome in Breakthrough game!\n";
+    cout << "-----------------------------------\n\n";
+    cout << "Choose Your side!\nEnter W (for whites), B (for blacks), N (for none, game between bots): ";
+
+    char player_side;
+    cin >> player_side;
+
+    switch (player_side){
+        case 'W':
+            game(1);
+            break;
+        case 'B':
+            game(0);
+            break;
+        case 'N':
+            game(2);
+            break;
+        default:
+            cout << "Entered invalid value :(";
+    }
+}
