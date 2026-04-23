@@ -1,4 +1,7 @@
 LenartLista2
+venv/
+.vscode/
 Raport.pdf
 .exe
 game.dSYM
+bits/
