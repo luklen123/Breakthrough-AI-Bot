@@ -396,7 +396,6 @@ Move get_player_move(GameState state, Move last_move){
 void game(int ai_player){
     GameState state = init_board();
     Move last_move;
-    // make last_move invalid for first turn
     Move selected_move;
 
     while(!is_game_over(state)){
